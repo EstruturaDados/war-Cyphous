@@ -1,52 +1,127 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
-#define MAX_TERRITORIOS 5
-
-/* 
-   Struct Territorio:
-   Agrupa informações relacionadas a um território do jogo.
-   - nome: nome do território
-   - cor: cor do exército dominante
-   - tropas: quantidade de tropas no território
-*/
 typedef struct {
     char nome[30];
     char cor[10];
     int tropas;
 } Territorio;
 
-int main() {
-    Territorio lista[MAX_TERRITORIOS]; // Vetor com 5 territórios
+/* Cadastro simples */
+void cadastrar(Territorio *mapa, int qtd) {
+    for (int i = 0; i < qtd; i++) {
+        printf("=== Território %d ===\n", i + 1);
 
-    // Cadastro
-    for (int i = 0; i < MAX_TERRITORIOS; i++) {
-        printf("=== Cadastro do Território %d ===\n", i + 1);
+        printf("Nome: ");
+        scanf("%29s", mapa[i].nome);
 
-        // Leitura do nome
-        printf("Digite o nome do território: ");
-        scanf("%29s", lista[i].nome);
+        printf("Cor do exército: ");
+        scanf("%9s", mapa[i].cor);
 
-        // Leitura da cor do exército
-        printf("Digite a cor do exército: ");
-        scanf("%9s", lista[i].cor);
-
-        // Leitura da quantidade de tropas
-        printf("Digite o número de tropas: ");
-        scanf("%d", &lista[i].tropas);
+        printf("Tropas: ");
+        scanf("%d", &mapa[i].tropas);
 
         printf("\n");
     }
+}
 
-    // Exibição dos dados cadastrados
-    printf("\n===== TERRITÓRIOS REGISTRADOS =====\n");
-    for (int i = 0; i < MAX_TERRITORIOS; i++) {
+/* Exibição simples */
+void exibirMapa(Territorio *mapa, int qtd) {
+    printf("\n===== ESTADO DO MAPA =====\n");
+    for (int i = 0; i < qtd; i++) {
         printf("Território %d:\n", i + 1);
-        printf("Nome: %s\n", lista[i].nome);
-        printf("Cor do exército: %s\n", lista[i].cor);
-        printf("Tropas: %d\n", lista[i].tropas);
-        printf("-------------------------------\n");
+        printf("Nome: %s\n", mapa[i].nome);
+        printf("Cor: %s\n", mapa[i].cor);
+        printf("Tropas: %d\n", mapa[i].tropas);
+        printf("------------------------------\n");
+    }
+}
+
+/* Ataque com regras pedidas */
+void atacar(Territorio *atacante, Territorio *defensor) {
+    printf("\n%s (%s) está atacando %s (%s)\n",
+           atacante->nome, atacante->cor,
+           defensor->nome, defensor->cor);
+
+    int dadoA = (rand() % 6) + 1;
+    int dadoD = (rand() % 6) + 1;
+
+    printf("Dado do atacante: %d\n", dadoA);
+    printf("Dado do defensor: %d\n", dadoD);
+
+    if (dadoA >= dadoD) { // empate favorece atacante
+        printf("Atacante vence essa rodada!\n");
+        defensor->tropas--;
+
+        if (defensor->tropas <= 0) {
+            printf("Território conquistado!\n");
+            strcpy(defensor->cor, atacante->cor);
+            defensor->tropas = 1; // assume 1 tropa mínima
+        }
+
+    } else {
+        printf("Defensor resiste! Atacante perde 1 tropa.\n");
+        atacante->tropas--;
+        if (atacante->tropas < 0)
+            atacante->tropas = 0;
+    }
+}
+
+int main() {
+    srand(time(NULL));
+
+    int qtd = 5;
+    Territorio *mapa = calloc(qtd, sizeof(Territorio));
+
+    cadastrar(mapa, qtd);
+
+    int op = 0;
+    while (op != 3) {
+        printf("\n=== MENU ===\n");
+        printf("1 - Exibir mapa\n");
+        printf("2 - Atacar\n");
+        printf("3 - Sair\n");
+        printf("Escolha: ");
+        scanf("%d", &op);
+
+        if (op == 1) {
+            exibirMapa(mapa, qtd);
+        }
+
+        else if (op == 2) {
+            int a, d;
+            exibirMapa(mapa, qtd);
+
+            printf("Escolha atacante (1 a 5): ");
+            scanf("%d", &a);
+
+            printf("Escolha defensor (1 a 5): ");
+            scanf("%d", &d);
+
+            if (a < 1 || a > qtd || d < 1 || d > qtd || a == d) {
+                printf("Seleção inválida.\n");
+                continue;
+            }
+
+            Territorio *atacante = &mapa[a - 1];
+            Territorio *defensor  = &mapa[d - 1];
+
+            if (strcmp(atacante->cor, defensor->cor) == 0) {
+                printf("Não pode atacar território da mesma cor.\n");
+                continue;
+            }
+
+            if (atacante->tropas <= 0) {
+                printf("O atacante não tem tropas suficientes!\n");
+                continue;
+            }
+
+            atacar(atacante, defensor);
+        }
     }
 
+    free(mapa);
     return 0;
 }
